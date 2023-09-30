@@ -1,0 +1,243 @@
+---
+title: "Student"
+author: "M.NEKUI TIEFANG BIEDIANT"
+date: "2023-04-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#charger les données
+```{r}
+clients=read.csv("http://goo.gl/qw303p")
+```
+
+
+##inspecter les donneés
+
+```{r}
+head(clients)
+summary(clients)
+str(clients)
+```
+#changer de nom des variables et rendre les var quali en facteur
+```{r}
+names(clients)=c("age","sexe","revenu","enfants","proprio","abonné","segments")
+clients$sexe=as.factor(clients$sexe)
+clients$proprio=as.factor(clients$proprio)
+clients$abonné=as.factor(clients$abonné)
+clients$segments=as.factor(clients$segments)
+str(clients)
+```
+
+#les fonctions by agregate et with
+
+*by
+```{r}
+by(clients$revenu,clients$segments,mean)#moyenne des revenu en fonction des segments
+by(clients$revenu,list(clients$segments,clients$proprio),mean)#moyenne des revenu en fonction de segments et proprio
+
+```
+*aggregate
+même role que *by* mais rendus sous forme de tableau
+
+```{r}
+tableau=aggregate(revenu~segments,mean,data = clients)
+tableau
+tableau2=aggregate(revenu~segments+proprio,mean,data = clients)
+tableau2
+```
+*with
+```{r}
+with(clients, table(segments,proprio)) #tableau de frequence pour var quali
+with(clients, prop.table(table(segments,proprio),margin=1))
+with(clients, prop.table(table(segments,proprio),margin=2)) #tableau de frequence pour var quali
+#margin=1 par ligne     margin=2 par colonne
+```
+#representation des données
+
+```{r}
+library(lattice)
+histogram(~abonné | segments , data = clients)
+histogram(~sexe | segments , data = clients)
+histogram(~abonné|segments, data = clients, type = "count", layout=c(4,1),col=c("red","blue"))
+histogram(~abonné | segments+proprio , data = clients)
+prop.table(table(clients$abonné,clients$segments),margin = 2)
+#histogram(~abonné | segments+revenu.fac , data = clients)
+barchart(prop.table(table(clients$abonné,clients$segments),margin = 2)[2,],xlab = "titre",col="red")
+```
+
+
+
+
+### essayons de realiser un test de comparaison des moyennes
+##student dans notre bd
+
+```{r}
+by(clients$revenu,clients$proprio, var)
+boxplot(clients$revenu~clients$proprio)
+```
+
+visiblement les mean sont différente
+
+# Vérification den la normalité
+```{r}
+hist(clients$revenu)
+shapiro.test(clients$revenu)
+```
+normalité rejeté !!
+
+
+pour visualiser la distribution d'une variable avec une seule modalite il faut:
+```{r}
+par(mfrow=c(1,2))
+with(clients,hist(revenu[proprio=="ownYes"]))
+with(clients,hist(revenu[proprio=="ownNo"]))
+
+```
+
+
+```{r}
+
+#t.test(clients$revenu~clients$proprio, var.equal=FALSE)
+#lorsque les deux echantillon sont depezndant et numerique la syntaxe adequat est la suivante
+#t.test(echan1,echan2, var.equal=T, paired=T)
+
+#non paramétrique
+
+by(clients$revenu,clients$proprio, median)
+wilcox.test(clients$revenu~clients$proprio,correct = F)
+
+```
+rejet de H0
+
+
+
+test de conformité
+```{r}
+median(clients$revenu)
+wilcox.test(clients$revenu, mu=52050)
+
+```
+H0 accepté: oui le revenu moyen peut être assimilable/conforme  a 52050
+
+
+```{r}
+library(pastecs)
+by(clients$revenu,clients$proprio,stat.desc)
+```
+
+
+##test du khi-deux lien entre deux var quali
+
+#tableau de frequence
+```{r}
+t=table(clients$abonné,clients$proprio)
+t
+```
+HO: pas de lien
+H1: existance de lien
+ Notons ici que le risque represente une ERREUR D'INFERENCE( donc en general c'est sur 100 echantillon je peux me tromper sur 5 echantillons)
+```{r}
+chisq.test(t,correct =F )
+
+```
+
+pas de lien !!!!
+
+
+
+
+
+
+
+## passons au test binomiale sorti binaire
+
+H0: Pval inf 0.5 
+H1:Pval sup/=0.5
+
+```{r}
+#binom.test(x,n,p,alternative = "greater")
+#?binom.test
+# Supposons que nous avons 30 tirages de pièces de monnaie et que nous voulons tester si la probabilité de succès est de 0.5
+nombre_de_succes <- 18
+taille_de_l_echantillon <- 30
+probabilite_theorique <- 0.5
+
+# Effectuer le test binomial
+resultat_test <- binom.test(nombre_de_succes, taille_de_l_echantillon, p = probabilite_theorique, alternative = "two.sided")
+
+# Afficher les résultats
+print(resultat_test)
+
+
+```
+x:nbre observé qui repondent aux succeès , n:total , p=0.5(generalement), H1 (alternative)=superieure
+pour conclure on compare la prob de succes a 0.5
+
+
+
+
+
+
+
+
+
+## ANOVA (analysis of variance)
+ 
+il complète le test de stutend qui se limite a un facteur et  2 modalités  _exclusivement_
+
+
+
+*passons à la visualisation tout d'abord
+```{r}
+library(ggplot2)
+visua=ggplot(clients,aes(segments,revenu))+geom_boxplot()
+visua
+```
+
+*passons a anova proprement dit ( un facteur plus de deux modalités)
+```{r}
+segmentanova=aov(revenu~segments,data = clients)
+
+anova(segmentanova)
+```
+F value est le quotient de la moyenne de la  somme des carrées du model sur la moyenne de la  somme des carrées par groupe
+
+il est bien significatif donc on peut conclur que les types de segment ont un impact sur la moyenne des revenu
+
+* anova deux facteurs now
+
+```{r}
+model2=aov(revenu~segments+proprio,data = clients)
+anova(model2) #proprio pas significatif supsons de multicolinearité!!!!
+
+
+model3=lm(revenu~segments+proprio,data = clients)
+summary(model3)
+```
+
+
+*comparaison des modèles anova
+ 
+```{r}
+anova(segmentanova, model2)
+```
+ Pr(F)= 0.5772 donc H0 accepté (pas d'amelioration dans le model ) model1 mieux que model2
+ 
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+

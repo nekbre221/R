@@ -1,0 +1,266 @@
+---
+title: "Lab's 3"
+author: "M.NEKUI TIEFANG BIEDIANT"
+date: "2023-03-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+
+
+
+```{r}
+library(dplyr)
+library(readxl)
+base=read_excel("/home/nekui-tiefang/Bureau/regression lineaire/Cigarettes.regression.xlsx")
+base2=data.frame(base)
+newbase= select(base2,Cigarette,TAR..mg.,NICOTINE..mg.,WEIGHT..g., CO..mg.)
+base3=rename(newbase,TARmg=TAR..mg.,NICOmg=NICOTINE..mg.,WEIGHTg=WEIGHT..g., COmg=CO..mg. )
+colnames(base3)
+
+```
+
+significativité des variables
+```{r}
+
+df2=data.frame(base3$TARmg,base3$NICOmg,base3$WEIGHTg,base3$COmg)
+plot(df2)
+```
+nous constatons que les variables significatives de COmg sont: TARmg et NICOmg
+
+
+
+
+```{r}
+model2 = lm(base3$COmg ~ base3$TARmg+ base3$NICOmg+ base3$WEIGHTg)
+summary(model2)
+
+```
+
+
+d'apres le test de nulite de student seul la var TAR est signifificatif
+
+
+
+```{r}
+model3= lm(COmg ~ TARmg+0 )
+model3
+#model4= lm(base3$COmg ~ base3$TARmg +0)
+summary(model3)
+plot(base3$TARmg,base3$COmg, col="blue", xlab = "x", ylab = "y", main = " titre ")
+abline(model3, col = "red")
+
+```
+ Super toutes les valeurs sont significatives 
+ 
+ l'équation de la droite ajusté devient: $$Ŷ_{i}=0.92813 *X_{i}$$
+ 
+
+ 
+ 
+*validité du model*
+ce model est valide si les conditions suivantes sont respectées:
+  1-linéarité 
+  2-indépendance des residus (test de Durbin-watson pour la correlation des residus)
+  3-Homoscedasticité 
+  4-normalité des residus (shapiro-wilk)
+  5-absence de valeurs aberrantes (toute les valeurs doivent êtres représentes)
+
+ 
+ 
+
+1) lineairité
+
+
+```{r}
+raintest(model3)
+```
+ou
+
+```{r}
+
+library(car)
+scatterplot(base3$COmg ~ base3$TARmg,data = base3, regLine=list(method=lm,  lwd=1, col="red") )
+```
+sa confirme l'acceptation
+
+
+5-2)indépendance des residus
+  
+```{r}
+library(performance)
+library(lmtest)
+check_autocorrelation(model3) 
+dwtest(model3)
+```
+il faut une p-value supérieure à 0,05 pour avoir indépendance.
+  
+*conclusion*: residus indépendance  !!! 
+
+
+
+
+5-3)homoscedasticité
+  
+```{r}
+library(car)
+plot(model3, which = 3)
+```
+ 
+ On cherche ici une courbe rouge plane. L'homogénéité est à rejeter si celle-ci n'est pas horizontale.
+ 
+ *homoscedasticité difficilement acceptable
+ 
+```{r}
+library("lmtest") ;
+#bptest(model3) # librairie lmtest et impossible sans intercept
+ncvTest(model3) # librairie car
+```
+ L'homogénéité est rejeté si la p-value est inférieure à 0,05
+ 
+
+```{r}
+library(performance)
+check_heteroscedasticity(model3)
+
+```
+  
+   Homoscedasticité des residus verifié !!! 
+   
+   
+  
+   Homoscedasticité des residus verifié !!!
+  
+  
+  5-4)normalité
+  
+```{r}
+hist(residuals.lm(model3),col="yellow",freq=F)
+densite <- density(residuals.lm(model3)) # estimer la densité que représente ces différentes valeurs
+lines(densite, col = "red",lwd=5) # Superposer une ligne de densité à l'histogramme
+```
+  autre methodes recommandé
+  
+```{r}
+shapiro.test(residuals.lm(model3))
+check_normality(model3)
+```
+  Normalité des residus Validé...!!!
+  
+  
+  
+  
+  5-5) absence de valeurs aberrantes (toute les valeurs doivent êtres présentes)
+   
+```{r}
+plot(model3, which = 1) 
+plot(model3, which = 2) 
+plot(model3, which = 3) 
+plot(model3, which = 4)  
+plot(model3, which = 5) # ce qui m'interesse !!!!
+plot(model3, which = 6) 
+```
+
+le lien de la documentation de tout les cas: https://data.library.virginia.edu/diagnostic-plots/
+
+aucune valeur en dehors de la cook's distance 
+Donc pas de valeur extrême 
+
+
+
+```{r}
+boxplot(residuals.lm(model3))
+
+```
+limites de turkey bien aux limites de notre cadrant 
+Donc pas de valeur extrême quelque soit la variable
+
+
+
+
+
+
+CONCLUSION NOTRE MODELE SIMPLISTE $$Ŷ_{i}=0.92813 *X_{i}$$ 
+PEUT ETRE CONSIDERE COMME VALIDE PUISQUE TOUTES LES CONDITIONS SONT VALIDES
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+TARmg=base3$TARmg
+
+COmg=base3$COmg
+valreg(model3,plot = TRUE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

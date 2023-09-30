@@ -1,0 +1,143 @@
+---
+title: "Lab's 2-1 Reg-simple-mtcars"
+author: "M.NEKUI TIEFANG BIEDIANT"
+date: "2023-03-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data("mtcars")
+attach(mtcars)
+head(mtcars)
+```
+
+Les données ont été extraites du magazine américain Motor Trend et comprennent la consommation de carburant et 10 aspects de la conception et des performances automobiles pour 32 automobiles 
+
+DESCRIPTION
+[, 1]	mpg	Miles/(US) gallon *la distance en km, qu'une voiture peut parcourir par gallon de carburant.*
+[, 2]	cyl	Number of cylinders
+[, 3]	disp	Displacement (cu.in.)*est le volume balayé par le déplacement d'une pièce mobile dans une chambre hermétiquement close pour un mouvement unitaire.*
+[, 4]	hp	Gross horsepower *puissance brute*
+[, 5]	drat	Rear axle ratio *Rapport de transmision pont arrière*
+[, 6]	wt	Weight (1000 lbs) *poid*
+[, 7]	qsec	1/4 mile time  *temps de parcours de 400m *
+[, 8]	vs	Engine (0 = V-shaped, 1 = straight)
+[, 9]	am	Transmission (0 = automatic, 1 = manual) 
+[,10]	gear	Number of forward gears  *Nombre de vitesses avant*
+[,11] carb                         *Nombre de carburateurs*
+
+
+
+```{r}
+plot(mtcars$mpg~mtcars$wt)
+```
+
+
+```{r}
+model=lm(mpg~wt, data = mtcars)
+summary(model)
+```
+
+
+
+```{r}
+plot(mtcars$mpg~mtcars$wt)
+abline(model,col="red",lwd=2)
+```
+
+
+
+
+
+
+passons aux diagnostique du model
+```{r}
+plot(model)
+```
+
+ici l'ideal est que la ligne rouge soit le plus horizontale possible!! ce qui n'est pas encore le cas visiblement !!! 
+mais sa n'empêche que le modèle soit expliqué a 74% le mpg
+
+
+                                   passons now a un model polynomial
+
+
+```{r}
+modelP2=lm(mpg~ +wt+I(wt^2), data = mtcars)
+summary(modelP2)
+```
+
+cool une amelioration ! Le medel explique a 80.66% le mpg 
+daignostiquons le 
+
+```{r}
+plot(modelP2)
+```
+
+la courbe tend vers une ligne horizontale nettement mieux que la précédante 
+
+```{r}
+plot(mtcars$mpg~mtcars$wt)
+abline(model,col="green",lwd=2)
+wt.seq=seq(min(wt),max(wt), by=0.01)
+mpg.predict=predict.lm(modelP2,data.frame(wt=wt.seq))
+lines(wt.seq ,mpg.predict,col="red",lwd=5)
+
+```
+
+nettement mieux le vert nesparrrrr
+
+
+
+
+nous continuons avec une équation d'ordre 3
+ 
+```{r}
+modelP3=lm(mpg~wt+I(wt^2)+I(wt^3), data = mtcars)
+summary(modelP3)
+```
+oups le model d'ordre 3 explique moin bien que le precedant d'ordre 2
+
+
+```{r}
+plot(mtcars$mpg~mtcars$wt)
+abline(model,col="red",lwd=2)
+wt.seq=seq(min(wt),max(wt), by=0.01)
+mpg.predict=predict.lm(modelP2,data.frame(wt=wt.seq))
+lines(wt.seq ,mpg.predict,col="green")
+
+
+mpg.predict1=predict.lm(modelP3,data.frame(wt=wt.seq))
+lines(wt.seq ,mpg.predict1,col="blue")
+```
+quasiment identique nespas !!! mais le model d'ordre 2 est plus pertinant
+
+
+evoluons 
+
+```{r}
+modelP4=lm(mpg~poly(wt,4),data = mtcars)
+summary(modelP4)
+```
+ toujours pas mieux 
+ 
+ 
+      utilisation d'anova pour la comparaison des models
+      
+```{r}
+anova(model,modelP2,modelP3,modelP4)
+```
+   même d'apres l'anova le model le plus significatif est le deuxième
+   
+    sur ceux je vous remercie..............................................
+
+      
+      
+
+
+
+

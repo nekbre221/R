@@ -1,0 +1,307 @@
+---
+title: "Lab's 4"
+author: "M.NEKUI TIEFANG BIEDIANT"
+date: "2023-03-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+
+  
+```{r}
+
+VinRouge=read.csv("/home/nekui-tiefang/Bureau/my R/data 3/winequality-red .csv",sep = ";")
+
+```
+  
+  
+  
+
+
+```{r}
+cor(VinRouge)
+```
+
+
+  
+  
+  
+1) Significativite des varibles  
+
+```{r}
+mod=lm(quality~.,data=VinRouge)
+
+summary(mod)
+
+```
+  
+  Le canstat qui se dégage est la qualité du vin Rouge ne depend pas de toute les variables
+  
+```{r}
+vif(mod)
+```
+
+  
+  
+```{r}
+mod1=lm(quality~.-density,data=VinRouge)
+
+summary(mod1)
+
+```
+```{r}
+vif(mod1)
+```
+
+
+
+
+```{r}
+mod2=lm(quality~.-density-fixed.acidity,data=VinRouge)
+
+summary(mod2)
+
+```
+```{r}
+vif(mod2)
+```
+
+```{r}
+mod3=lm(quality~.-density-fixed.acidity-residual.sugar,data=VinRouge)
+
+summary(mod3)
+
+```
+```{r}
+vif(mod3)
+```
+
+```{r}
+mod4=lm(quality~.-density-fixed.acidity-residual.sugar-citric.acid ,data=VinRouge)
+
+summary(mod4)
+
+```
+```{r}
+mod5=lm(quality~alcohol +sulphates+ pH+ total.sulfur.dioxide+free.sulfur.dioxide+  chlorides+volatile.acidity,data=VinRouge)
+
+summary(mod5)
+
+```
+
+
+
+
+```{r}
+vif(mod4)
+```
+
+```{r}
+mod5=lm(quality~.-density-fixed.acidity-residual.sugar-citric.acid ,data=VinRouge)
+
+summary(mod5)
+
+```
+
+                          Cours
+Lorsque l'on a plusieurs variables, la fonction lm() reste pertinente. Il faut juste en maîtriser la syntaxe.
+
+lm(y~x) : régression classique y = f(x)  - affine - y = ax+b
+
+lm(y~x+0) : régression linéaire y = f(x) sans intersection - y = ax
+
+lm(y~x1+x2) : régression telle que y = B + A1*x1 + A2*x2
+
+  -lm(y~x1:x2) : régression telle que y = B + A1*x1*x2 
+
+  -lm(y~x1*x2) : régression telle que y = B + A1*x1 + A2*x2 + A3*x1*x2
+
+A cette syntaxe, on peut ajouter d'autres fonctions pour permettre des régression polynomiales avec poly() ou d'autres transformations avec I().
+
+Exemples :
+
+lm(y~poly(x,3)) : régression polynomiale telle que y = B + A1*x + A2*x² + A3*x^3
+
+lm(y~I(1/x) : permet d'imposer des transformations à x comme ici y = B + A1*1/x 
+
+
+
+2) établissement du modèle (droite de regresion et eqt de la droite ajuste)
+
+```{r}
+library(rgl)
+scatterplot3d(VinRouge)
+
+```
+avec des val non signif
+
+
+
+
+```{r}
+VinRougeSignif=data.frame(VinRouge$volatile.acidity,VinRouge$chlorides,VinRouge$free.sulfur.dioxide,VinRouge$total.sulfur.dioxide,VinRouge$pH,VinRouge$sulphates,VinRouge$alcohol,VinRouge$quality)
+scatterplot3d(VinRougeSignif)
+
+```
+
+ Le constat qui en découle est clair ................. le retrait des var non significatives sont justifiées !!!!!!
+
+
+  
+  
+  ***application de abline sur les var signifi biensur!
+  
+```{r}
+
+scatterplot3d(VinRougeSignif)
+abline(mod2, col = "red")
+
+```
+
+
+ vous savez biensur qu'abline ne considère que deux coefficient 
+ 
+ 
+```{r}
+coef(mod2)
+```
+ 
+ 
+ l'equation de la droite ajustée est: 
+ $$Ŷ_{i}=4.43 -2*C_{i}-0.0035*T_{i}+0.88*S_{i}-Va_{i}+0.005*F_{i}-0.5*P_{i}+0.2*A$$
+
+
+
+
+
+3) validité du model
+ce model est valide si les conditions suivantes sont respectées:
+  1-linéarité
+  2-normalité des residus
+  3-Homoscedasticité 
+  4-indépendance des residus
+  5-absence de valeurs aberrantes 
+
+
+
+
+
+
+ 3-1) *linearité*
+
+HO: oui lineare
+H1: non lineaire
+```{r}
+library(lmtest)
+raintest(mod4)
+```
+ linearité accepté
+
+
+```{r}
+
+library(car)
+scatterplot(mpg ~ hp+wt,data = bd3, regLine=list(method=lm,  lwd=1, col="red") )
+```
+
+
+
+
+ 5-2)normalité
+  
+```{r}
+hist(residuals.lm(mod4),col="yellow",freq=F)
+densite <- density(residuals.lm(mod4)) # estimer la densité que représente ces différentes valeurs
+lines(densite)
+```
+  autre methodes recommandé
+  
+```{r}
+shapiro.test(residuals.lm(mod4))
+
+```
+  Normalité des residus  Non Validé...!!!
+
+
+```{r}
+
+library(performance)
+check_normality(mod4)
+```
+
+
+
+
+
+5-4)indépendance des residus
+
+```{r}
+library(lmtest)
+dwtest(mod4)
+```
+  il faut une p-value supérieure à 0,05 pour avoir indépendance.
+  
+*conclusion*: residus dépendant  !!!  
+*Attention :*  ce test n'évalue que l'autocorrélation entre résidus et le résidus qui suit directement (n+1) et non ceux séparés d'un intervalle (résidus+2) qui pourraient être autocorrélés dans un phénomène cyclique.
+
+ *On peut aussi visualiser l'indépendance avec ce graphique suivant :
+
+```{r}
+library(stats)
+acf(residuals(mod2), main="Regression Y = f(X)")
+```
+*conclusion*: residus dépendant  !!! 
+ 
+
+```{r}
+check_autocorrelation(mod4) 
+```
+
+
+
+
+
+
+
+
+  
+  
+  5-5) absence de valeurs aberrantes (toute les valeurs doivent êtres présentes)
+   
+```{r}
+plot(mod2, which = 1) 
+plot(mod2, which = 2) 
+plot(mod2, which = 3) 
+plot(mod2, which = 4)  
+plot(mod2, which = 5) # ce qui m'interesse !!!!
+plot(mod2, which = 6) 
+```
+
+le lien de la documentation de tout les cas: https://data.library.virginia.edu/diagnostic-plots/
+
+aucune valeur en dehors de la cook's distance 
+Donc pas de valeur extrême 
+
+
+
+CONCLUSION NOTRE MODELE $$Ŷ_{i}=4.43 -2*C_{i}-0.0035*T_{i}+0.88*S_{i}-Va_{i}+0.005*F_{i}-0.5*P_{i}+0.2*A$$
+PEUT ETRE CONSIDERE COMME NON VALIDE PUISQUE TOUTES LES CONDITIONS NE SONT PAS VALIDES
+
+
+
+vous aurrez plus de chance la prochaine fois
+
+un peut de verification !
+```{r}
+dfin=data.frame(df,fitted.values(mod2))
+
+```
+on comprend le pourquoi du rejet !!!
+
+

@@ -1,0 +1,154 @@
+---
+title: "ACP"
+author: "M.NEKUI TIEFANG BIEDIANT"
+date: "2023-04-11"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## ACP 
+#traitement
+
+```{r}
+library(factoextra)
+library(FactoMineR)
+data("mtcars")
+mtcars$country=c(rep("Japon",3),rep("us",4),rep("Europe",7),rep("us",3),"Europe",rep("japon",3),rep("us",4),rep("Europe",3),"us",rep("Europe",3))
+base =mtcars
+names(base)
+View(base)
+summary(base)
+```
+remarque taille des données pas homogène
+
+#in acp
+
+```{r}
+acp= PCA(base,scale.unit = T,quali.sup = 12)
+#scale.unit pour une homogeneité (centré et reduire), quali.sup=12 ajouter la 12eme var qui est quali
+#obtenir les propriétés de l'objet acp 
+acp
+```
+
+pour voir les resultats sur les les 2 première dimention il faut 
+```{r}
+summary(acp,ncp=2)
+#il donne les valeurs propre, les coordonné des var 
+
+#pour obtenir les valeus propres (variance associé aux axes) il faut
+
+val.propre=round(acp$eig[,1],2)
+val.propre
+
+#calcul en pourcentage
+cumulative.percentage.variance=round(acp$eig[,3],2)
+cumulative.percentage.variance # comme regle on peut prendre deux dimensions 
+
+#tracer du graphique des valeurs propres
+plot(1:11,val.propre,type = "b",ylab = "valeurs propres",xlab = "composante",main = "scree plot")
+
+
+```
+
+
+##coordonnées des variables sur les axes factoriels
+
+
+```{r}
+#coorelation variables facteurs 
+print(acp$var$cor[,1:2],digits=2) #coordonnées sur deux dimension
+
+#contribution de chaque variable par le cosinus et le contrib
+round(acp$var$cos2[,1:2],2)
+round(acp$var$contrib[,1:2],2)
+
+```
+
+
+```{r}
+#contributions des variables sur la dim1
+fviz_contrib(acp, choice="var",axes = 1,top = 10)
+
+#contributions des variables sur la dim2
+fviz_contrib(acp, choice="var",axes = 2,top = 10)
+
+#contributions total sur la dim 1 et 2
+fviz_contrib(acp, choice="ind",axes = 1:2)
+
+#cercle de correlarion - variables actives
+#colore en fonction du cos2: qualité de representaion
+fviz_pca_var(acp, col.var = "cos2",gradient.cols=c("blue","red","yellow"),repel = T,title="cercle de corelation")
+```
+
+#graphique des individus
+```{r}
+#projection des individus sur le premier pla factoreil
+
+#composante des individus sur l'axe principale
+round(acp$ind$coord[,1:2],2)
+
+
+
+# si l'on a beaucoup d'individus et leurs libele ne sont pas explicite (des numeros par exmple)
+# on peut supprimer les noms des libéles tout en laissant les points avec l'argument label="none"
+plot(acp,cex=0.8,invisible = "quali", label = "none", title = "graphique des individus")
+#mettons y un peut de couleurs en fction des modalites
+plot(acp,cex=0.8,habillage = "country",repel=T,title = "graphique des individus")
+#elipse de confiance autour des modalités
+plotellipses(acp)
+
+```
+
+```{r}
+# calculons la contribution des individus actifs pour les deux premiers axes
+round(acp$ind$cos2[,1:2],2)
+round(acp$ind$contrib[,1:2],2)
+
+
+#graphe avec selection des individus
+#select="cos2 0.7": selectionne les individus qui ont sur le plan tracé une qualité de projection superieure a 0.7
+plot(acp,cex=0.8,habillage = 12,select = "cos2 0.8")
+#select="cos2 5": selectionne les 5 individus qui ont la meilleur qualité de projection sur le le plan
+plot(acp,cex=0.8,habillage = 12,select = "cos2 7")
+
+fviz_pca_ind(acp,col.ind = "cos2",gradient.cols=c("green","red","blue"),repel = T) #evite le chevauchement de texte
+#graphe avec selection des individus, des tailles de police differentes
+#pour les titres des ombres sous les points 
+plot(acp,cex=0.8,habillage = 12,select = "cos2 0.7", title = "cathegories des voitures",cex.main=1.1,cex.axis=0.9,shadow=T,auto="y")
+
+#graphe biplot
+fviz_pca_biplot(acp,cex=0.8,habillage = 12,repel = T,col.var = "black",col.ind = "red",ggtheme=theme_minimal())
+
+
+```
+
+
+
+
+```{r}
+library(rmarkdown)
+render("/home/nekui-tiefang/Documents/mes codes R/ACP2.Rmd")
+
+```
+
+
+                                                  _FIN_
+                                                  
+                                                  
+                                                  
+                                                  
+                                                  
+                                                  
+                                                  
+                                                  
+                                                  
+                                                  
+                                                  
+                                                  
+                                                  
+                                                  

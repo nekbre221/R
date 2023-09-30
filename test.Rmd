@@ -1,0 +1,91 @@
+---
+title: "notions de regression logistique"
+author: "ATEBA NKOA JEAN MARTIAL"
+date: '2023-03-17'
+output: html_document
+---
+
+```{r}
+library(readr) # permet d'importer les donnees
+library(dplyr)  # permet de manipuler les donnees
+library(tidyverse) #permet aussi de manipuler les donnees
+library(caret) # permet de faire du machine learning
+
+```
+
+## Importation des donnees
+
+```{r}
+
+train<- read.csv("train.csv") #donnees pour construire le modele
+test<- read.csv("test.csv")  # donnees pour tester le modele
+
+```
+
+## Manipulation des donnees
+
+```{r}
+
+  full<- bind_rows(train,test) # On regroupe les donnees dans un meme data frame
+  head(full)
+  
+  sum(is.na(full)) # afficher le nombre de valeur manquantes
+  colMeans(is.na(full)) ## pourcentage de valeurs manquantes par colonne
+  
+  full<-full[!is.na(full$Survived),] # suprimer les valeur manquantes dans survived
+  
+  age= full[!is.na(full$Age),]$Age # on recupere les ages non NA 
+  
+  age_moyen<-mean(age)  ## on calcule la moyenne d'age
+  
+  full[is.na(full$Age),]$Age<-mean(age,na.rm = TRUE) ## supprimer les valeurs manquantes dans age
+  
+  full<- full %>% select(c("Survived","Pclass","Sex","Age","SibSp","Parch","Fare","Embarked")) # on selectionne les donnees qu'on souhaite conserver
+  
+```
+
+## Modelisation
+
+```{r}
+
+set.seed(240) ## fixer le seed 
+
+smp_size<-floor(0.75 * nrow(full))
+
+train_id<-sample(seq_len(nrow(full)), size = smp_size)
+
+train<- full[train_id,]
+test<- full[-train_id,]
+
+
+```
+
+## Regression logistique
+
+```{r}
+
+fitControl<- trainControl(method="cv" , number=10, savePredictions=TRUE) # parametrer le modele
+
+lr_model<- train (factor(Survived)~.,
+                  data=train,
+                  method="glm",
+                  familly=binomial(),
+                  trControl=fitControl)
+
+summary(lr_model) # avoir les infos sur le modele
+
+prediction_lr<- predict(lr_model,test) ## predire test a partir du modele lr_model
+test$Prediction<-prediction_lr # creer une colonne prediction
+
+xtab<- table(test$Prediction,test$Survived) # selectionne une table qui contient les predictions et le resulat et la mettre dans xtab
+
+confusionMatrix(xtab) ## afficher les donnees sous forme de matrice
+
+
+
+```
+
+
+
+
+

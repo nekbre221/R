@@ -1,0 +1,231 @@
+---
+title: "Lab's 2"
+author: "M.NEKUI TIEFANG BIEDIANT"
+date: "2023-03-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1)
+```{r}
+X = c(20,24,28,22,32,28,32,36,41,41)
+Y = c(16,18,23,24,28,29,26,31,32,34)
+df=data.frame(X,Y)
+```
+
+2)
+```{r}
+plot(X,Y, col="blue", xlab = "Quantité d'engrais en kg", ylab = "rendement de mais en quintal", main = " nuage des points  (Xi, Yi) ")
+
+
+```
+
+3)
+```{r}
+model =lm(Y~X)
+coef(model)
+summary(model)
+plot(X,Y, col="blue", xlab = "Quantité d'engrais en kg", ylab = "rendement de mais en quintal", main = " nuage des points  (Xi, Yi) ")
+abline(model, col = "red")
+
+```
+ l'equation de la droite ajustée est: $$Ŷ_{i}=4.3927701 +0.7140536 *X_{i}$$
+
+
+4)
+```{r}
+Ŷ=4.3927701+0.7140536*X
+resid=residuals.lm(model)
+df=data.frame(X,Y,Ŷ,resid)
+
+```
+
+
+
+5) validité du model
+ce model est valide si les conditions suivantes sont respectées:
+  1-linéarité 
+  2-indépendance des residus (test de Durbin-watson pour la correlation des residus)
+  3-Homoscedasticité 
+  4-normalité des residus (shapiro-wilk)
+  5-absence de valeurs aberrantes (toute les valeurs doivent êtres représentes)
+
+   5-1) *linearité*
+ 
+```{r}
+library(car)
+scatterplot(Y~X,data = df, regLine=list(method=lm,  lwd=1, col="red") )
+```
+*Un lissage permet de se donner une idée précise de la relation existante entre deux variables et d'estimer la linéarité de cette relation !
+*existance des valeurs peux ou pas expliqué par le medel
+
+ ou encore
+ 
+```{r}
+library(lmtest)
+raintest(model)
+```
+ p-value sup a 5%
+ linearité accepté
+ 
+ 
+  5-2)indépendance des residus
+  
+```{r}
+library(performance)
+library(lmtest)
+check_autocorrelation(model) 
+dwtest(model)
+```
+  il faut une p-value supérieure à 0,05 pour avoir indépendance.
+  
+*conclusion*: residus indépendance  !!!  
+
+*Attention :*  ce test n'évalue que l'autocorrélation entre résidus et le résidus qui suit directement (n+1) et non ceux séparés d'un intervalle (résidus+2) qui pourraient être autocorrélés dans un phénomène cyclique.
+  
+
+ *On peut aussi visualiser l'indépendance avec ce graphique suivant :
+
+```{r}
+library(stats)
+acf(residuals(model), main="Regression Y = f(X)")
+```
+ 
+ L'interprétation de ce graphique se fait de la manière suivante :
+-Le premier bâtonnet est très élevé, c'est l'auto-corrélation des résidus avec eux-même !
+-Le deuxième bâtonnet indique l'auto-corrélation entre les résidus et les résidus n+1 : il   y a auto-corrélation dès que le bâtonnet (lag) dépasse les pointillés.
+-Le troisième bâtonnet entre les résidus n et les résidus n+2... etc.
+ 
+ 
+ 
+  5-3)homoscedasticité
+  
+```{r}
+library(car)
+plot(model, which = 3)
+```
+ 
+ On cherche ici une courbe rouge plane. L'homogénéité est à rejeter si celle-ci n'est pas horizontale.
+ 
+ *homoscedas rejeté
+ 
+```{r}
+library("lmtest") ;
+bptest(model) # librairie lmtest
+ncvTest(model) # librairie car
+```
+ L'homogénéité est rejeté si la p-value est inférieure à 0,05
+ 
+        difficile de conclure !!!
+ 
+```{r}
+gqtest(model)
+```
+ Vérification par le test de Goldfeld-Quandt (homogénéité : p-value > 0,05)
+ 
+
+ 
+```{r}
+library(performance)
+check_heteroscedasticity(model)
+
+```
+  
+   Homoscedasticité des residus verifié !!!
+  
+  
+
+  
+ 
+  5-4)normalité
+  
+```{r}
+hist(residuals.lm(model),col="yellow",freq=F)
+densite <- density(residuals.lm(model)) # estimer la densité que représente ces différentes valeurs
+lines(densite) # Superposer une ligne de densité à l'histogramme
+```
+  autre methodes recommandé
+  
+```{r}
+shapiro.test(residuals.lm(model))
+check_normality(model)
+```
+  Normalité des residus Validé...!!!
+  
+ 
+  5-5) absence de valeurs aberrantes (toute les valeurs doivent êtres présentes)
+
+
+```{r}
+plot(model, which = 1) 
+plot(model, which = 2) 
+plot(model, which = 3) 
+plot(model, which = 4)  
+plot(model, which = 5) # ce qui m'interesse !!!!
+plot(model, which = 6) 
+```
+
+le lien de la documentation de tout les cas: https://data.library.virginia.edu/diagnostic-plots/
+
+aucune valeur en dehors de la cook's distance 
+Donc pas de valeur extrême 
+
+```{r}
+influenceIndexPlot(model) 
+```
+
+
+pas reelement de données extrême essayons kamem d'eliminer quelque valeur qui s'y raproche
+et comparons les deux modèles
+
+```{r}
+ model2 <- lm(Y~X, data=df[-c(2,4),])
+    compareCoefs(model ,model2) 
+```
+
+
+
+
+```{r}
+boxplot(df$resid)
+boxplot(X)
+boxplot(Y)
+```
+limites de turkey bien aux limites de notre cadrant 
+Donc pas de valeur extrême quelque soit la variable
+
+
+
+
+CONCLUSION NOTRE MODELE $$Ŷ_{i}=4.3927701 +0.7140536 *X_{i}$$ 
+PEUT ETRE CONSIDERE COMME VALIDE PUISQUE TOUTES LES CONDITIONS SONT VALIDES
+
+
+
+
+
+
+
+
+```{r}
+
+library(KefiR)
+valreg
+valreg(model, plot = TRUE )
+
+```
+
+```{r}
+bootreg(model)
+```
+
+
+
+```{r}
+
+rmarkdown::render("/home/nekui-tiefang/Documents/mes codes R/reg lin/Labs2RegSimpleValNumerique.Rmd")
+
+```
